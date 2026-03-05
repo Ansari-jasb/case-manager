@@ -1,0 +1,159 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}<i class="fas fa-chart-pie me-2"></i>Dashboard{% endblock %}
+{% block content %}
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+  {% for label,val,color,icon in [
+    ('Total Cases',stats.total,'#0F2A4A','fas fa-folder-open'),
+    ('Under Preparation',stats.under_prep,'#D97706','fas fa-hourglass-half'),
+    ('Prepared',stats.prepared,'#2563EB','fas fa-clipboard-check'),
+    ('Completed / Closed',stats.completed,'#059669','fas fa-check-circle'),
+    ('Total Invoices',stats.inv_total,'#7C3AED','fas fa-file-invoice'),
+    ('Pending Invoices',stats.inv_pending,'#DC2626','fas fa-clock'),
+  ] %}
+  <div class="col-md-2 col-sm-4 col-6">
+    <div class="kpi-card">
+      <div class="kpi-label">{{ label }}</div>
+      <div class="kpi-value" style="color:{{ color }}">{{ val }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Revenue -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue Collected (PKR)</div>
+      <div class="kpi-value" style="color:#059669;font-size:1.6rem">{{ "{:,.0f}".format(stats.rev_collected) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue Pending (PKR)</div>
+      <div class="kpi-value" style="color:#D97706;font-size:1.6rem">{{ "{:,.0f}".format(stats.rev_pending) }}</div>
+    </div>
+  </div>
+  {% if overdue %}
+  <div class="col-md-3">
+    <div class="kpi-card" style="border-color:#FCA5A5">
+      <div class="kpi-label" style="color:#DC2626">Overdue Cases</div>
+      <div class="kpi-value" style="color:#DC2626">{{ overdue|length }}</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Charts + Due Soon -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3" style="color:#0F2A4A">Cases by Status</h6>
+        <canvas id="statusChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3" style="color:#0F2A4A">Cases by Assignee</h6>
+        <canvas id="assigneeChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3" style="color:#0F2A4A">Top Clients</h6>
+        <canvas id="clientChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Due Soon Table -->
+{% if due_soon or overdue %}
+<div class="row g-4">
+  {% if overdue %}
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold" style="background:#FEE2E2;color:#DC2626;border:none">
+        <i class="fas fa-exclamation-triangle me-2"></i>Overdue Cases ({{ overdue|length }})
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Client</th><th>Case</th><th>Due Date</th><th>Assignee</th></tr></thead>
+          <tbody>
+          {% for c in overdue %}
+          <tr>
+            <td><small>{{ c.client.name if c.client else '—' }}</small></td>
+            <td><a href="/cases/{{ c.id }}" class="text-decoration-none small">{{ c.case_details[:40] }}</a></td>
+            <td><span class="badge bg-danger">{{ c.compliance_date }}</span></td>
+            <td><small>{{ c.assignee.name if c.assignee else '—' }}</small></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if due_soon %}
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold" style="background:#FEF3C7;color:#D97706;border:none">
+        <i class="fas fa-clock me-2"></i>Due Soon (next 7 days)
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Client</th><th>Case</th><th>Due Date</th><th>Days Left</th></tr></thead>
+          <tbody>
+          {% for c in due_soon %}
+          {% set days = (c.compliance_date - today).days %}
+          <tr>
+            <td><small>{{ c.client.name if c.client else '—' }}</small></td>
+            <td><a href="/cases/{{ c.id }}" class="text-decoration-none small">{{ c.case_details[:40] }}</a></td>
+            <td><small>{{ c.compliance_date }}</small></td>
+            <td><span class="badge {{ 'bg-danger' if days<=3 else 'bg-warning text-dark' }}">{{ days }}d</span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const statusData   = {{ by_status|tojson }};
+const assigneeData = {{ by_assignee|tojson }};
+const clientData   = {{ by_client|tojson }};
+const COLORS = ['#2563EB','#D97706','#059669','#7C3AED','#0891B2','#DC2626','#94A3B8'];
+
+new Chart(document.getElementById('statusChart'), {
+  type:'doughnut',
+  data:{labels:statusData.map(r=>r[0]||'No Status'),
+        datasets:[{data:statusData.map(r=>r[1]),backgroundColor:COLORS,borderWidth:2}]},
+  options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},cutout:'60%'}
+});
+new Chart(document.getElementById('assigneeChart'), {
+  type:'bar',
+  data:{labels:assigneeData.map(r=>r[0]),
+        datasets:[{data:assigneeData.map(r=>r[1]),backgroundColor:COLORS,borderRadius:4}]},
+  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+});
+new Chart(document.getElementById('clientChart'), {
+  type:'bar',
+  data:{labels:clientData.map(r=>r[0].length>16?r[0].slice(0,16)+'…':r[0]),
+        datasets:[{data:clientData.map(r=>r[1]),backgroundColor:'#2563EB',borderRadius:4}]},
+  options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+});
+</script>
+{% endblock %}

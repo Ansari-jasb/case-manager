@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ action }} Client{% endblock %}{% block topbar_title %}{{ action }} Client{% endblock %}
+{% block content %}<div class="row justify-content-center"><div class="col-lg-7"><div class="form-card">
+<h5 class="fw-bold mb-4" style="color:#0F2A4A">{{ action }} Client</h5>
+<form method="post"><div class="row g-3">
+  <div class="col-md-8"><label class="form-label">Client Name *</label><input name="name" class="form-control" value="{{ client.name if client else '' }}" required></div>
+  <div class="col-md-4"><label class="form-label">NTN</label><input name="ntn" class="form-control" value="{{ client.ntn if client else '' }}"></div>
+  <div class="col-md-6"><label class="form-label">Contact Person</label><input name="contact" class="form-control" value="{{ client.contact if client else '' }}"></div>
+  <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ client.email if client else '' }}"></div>
+  <div class="col-12"><label class="form-label">Address</label><input name="address" class="form-control" value="{{ client.address if client else '' }}"></div>
+  <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="3">{{ client.notes if client else '' }}</textarea></div>
+</div>
+<div class="d-flex gap-2 mt-4"><button class="btn btn-primary fw-semibold"><i class="fas fa-save me-1"></i>Save</button><a href="/clients/" class="btn btn-outline-secondary">Cancel</a></div>
+</form></div></div></div>{% endblock %}

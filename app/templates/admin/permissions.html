@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% block title %}Permissions — {{ user.username }}{% endblock %}
+{% block topbar_title %}<i class="fas fa-key me-2"></i>Permissions: {{ user.full_name or user.username }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <div>
+    <h5 class="fw-bold mb-1" style="color:#0F2A4A">{{ user.full_name or user.username }}</h5>
+    <span class="badge bg-secondary">{{ user.role|title }} (base role)</span>
+    <small class="text-muted ms-2">Checked boxes override role defaults.</small>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="post" action="/admin/users/{{ user.id }}/reset-to-role" onsubmit="return confirm('Reset to role defaults?')">
+      <button class="btn btn-outline-warning btn-sm"><i class="fas fa-rotate-left me-1"></i>Reset to Role</button>
+    </form>
+    <a href="/admin/users" class="btn btn-outline-secondary btn-sm">Back to Users</a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <form method="post">
+      <div class="table-responsive">
+        <table class="table table-bordered perm-table mb-4">
+          <thead style="background:#0F2A4A;color:#fff">
+            <tr>
+              <th style="width:120px">Module</th>
+              {% for a in actions %}<th class="text-center">{{ a|replace('_',' ')|title }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+          {% for m in modules %}
+          <tr>
+            <td class="fw-semibold text-capitalize" style="background:#F8F9FC">{{ m }}</td>
+            {% for a in actions %}
+            <td class="text-center">
+              <input type="checkbox" name="{{ m }}__{{ a }}" class="perm-check form-check-input"
+                     {% if matrix[m][a] %}checked{% endif %}>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary fw-semibold"><i class="fas fa-save me-1"></i>Save Permissions</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

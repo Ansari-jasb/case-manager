@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Case Detail{% endblock %}
+{% block topbar_title %}Case Detail{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a href="/cases/" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+  <div class="d-flex gap-2">
+    {% if current_user.can('cases','edit') %}
+    <a href="/cases/{{ case.id }}/edit" class="btn btn-primary btn-sm"><i class="fas fa-pen me-1"></i>Edit</a>
+    {% endif %}
+    {% if current_user.can('cases','delete') %}
+    <form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Permanently delete this case?')">
+      <button class="btn btn-danger btn-sm"><i class="fas fa-trash me-1"></i>Delete</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header py-3" style="background:#0F2A4A;border:none">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="text-white fw-bold mb-1">{{ case.case_details }}</h5>
+        <div class="text-light opacity-75 small">{{ case.client.name if case.client else '—' }} &nbsp;·&nbsp; {{ case.file_no or 'No File No.' }}</div>
+      </div>
+      <div class="d-flex gap-2">
+        <span class="badge-status s-{{ (case.status or '')|lower|replace(' ','-') }}">{{ case.status or '—' }}</span>
+        {% if case.priority %}
+        <span class="badge-status p-{{ case.priority|lower }}">{{ case.priority }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for label, val in [
+        ('Tax Period',    case.tax_period or '—'),
+        ('Assignee',      case.assignee.name if case.assignee else '—'),
+        ('Compliance Date', case.compliance_date|string if case.compliance_date else '—'),
+        ('Expected Completion', case.completion_date|string if case.completion_date else '—'),
+        ('Created',       case.created_at.strftime('%d %b %Y') if case.created_at else '—'),
+        ('Last Updated',  case.updated_at.strftime('%d %b %Y  %H:%M') if case.updated_at else '—'),
+      ] %}
+      <div class="col-md-4 col-sm-6">
+        <div class="p-3 rounded-2" style="background:#F8F9FC;border:1px solid #E2E8F0">
+          <div class="small text-muted fw-semibold mb-1">{{ label }}</div>
+          <div class="fw-semibold" style="color:#0F2A4A">{{ val }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="row g-4">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold" style="background:#EFF6FF;color:#1E40AF;border:none">
+        <i class="fas fa-list-check me-2"></i>Progress Report
+      </div>
+      <div class="card-body">
+        <pre style="white-space:pre-wrap;font-family:inherit;font-size:.9rem;color:#1E293B;margin:0">{{ case.progress or 'No progress notes yet.' }}</pre>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header fw-bold" style="background:#FEF3C7;color:#D97706;border:none">
+        <i class="fas fa-file-invoice me-2"></i>Invoices ({{ case.invoices|length }})
+      </div>
+      <div class="list-group list-group-flush">
+        {% for inv in case.invoices %}
+        <div class="list-group-item px-3 py-2">
+          <div class="d-flex justify-content-between">
+            <small class="fw-semibold">{{ inv.invoice_no }}</small>
+            <span class="badge {{ 'bg-success' if inv.status=='Paid' else 'bg-warning text-dark' if inv.status=='Pending' else 'bg-secondary' }}">{{ inv.status }}</span>
+          </div>
+          <small class="text-muted">PKR {{ "{:,.0f}".format(inv.amount or 0) }}</small>
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small px-3">No invoices linked.</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% if case.notes %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-bold" style="background:#F3F4F6;color:#374151;border:none"><i class="fas fa-sticky-note me-2"></i>Notes</div>
+      <div class="card-body"><small>{{ case.notes }}</small></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

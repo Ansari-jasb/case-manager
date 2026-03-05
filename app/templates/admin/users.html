@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Admin — Users{% endblock %}{% block topbar_title %}<i class="fas fa-shield-halved me-2"></i>User Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h5 class="fw-bold mb-0" style="color:#0F2A4A">System Users</h5>
+  <a href="/admin/users/add" class="btn btn-success btn-sm"><i class="fas fa-user-plus me-1"></i>Add User</a>
+</div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover mb-0">
+<thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+<tbody>{% for u in users %}
+<tr>
+  <td class="fw-semibold font-monospace">{{ u.username }}</td>
+  <td>{{ u.full_name or '—' }}</td>
+  <td><small>{{ u.email }}</small></td>
+  <td><span class="badge {{ 'bg-danger' if u.role=='admin' else 'bg-primary' if u.role=='manager' else 'bg-secondary' }}">{{ u.role|title }}</span></td>
+  <td><span class="badge {{ 'bg-success' if u.is_active else 'bg-secondary' }}">{{ 'Active' if u.is_active else 'Inactive' }}</span></td>
+  <td><small>{{ u.last_login.strftime('%d %b %Y') if u.last_login else 'Never' }}</small></td>
+  <td><div class="d-flex gap-1">
+    <a href="/admin/users/{{ u.id }}/edit" class="btn btn-xs btn-outline-primary" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-pen"></i></a>
+    <a href="/admin/users/{{ u.id }}/permissions" class="btn btn-xs btn-outline-warning" style="padding:2px 8px;font-size:.75rem" title="Permissions"><i class="fas fa-key"></i></a>
+    {% if u.id != current_user.id %}
+    <form method="post" action="/admin/users/{{ u.id }}/delete" onsubmit="return confirm('Delete user {{ u.username }}?')"><button class="btn btn-xs btn-outline-danger" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-trash"></i></button></form>
+    {% endif %}
+  </div></td>
+</tr>{% endfor %}</tbody>
+</table></div></div>{% endblock %}

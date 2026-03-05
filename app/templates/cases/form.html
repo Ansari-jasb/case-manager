@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Case{% endblock %}
+{% block topbar_title %}{{ action }} Case{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-9">
+<div class="form-card">
+  <h5 class="fw-bold mb-4" style="color:#0F2A4A"><i class="fas fa-folder-open me-2"></i>{{ action }} Case</h5>
+  <form method="post">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">File No.</label>
+        <input name="file_no" class="form-control" value="{{ case.file_no if case else '' }}">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Client</label>
+        <select name="client_id" class="form-select">
+          <option value="">— Select Client —</option>
+          {% for c in clients %}
+          <option value="{{ c.id }}" {% if case and case.client_id==c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Case Details <span class="text-danger">*</span></label>
+        <textarea name="case_details" class="form-control" rows="2" required>{{ case.case_details if case else '' }}</textarea>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tax Period</label>
+        <input name="tax_period" class="form-control" value="{{ case.tax_period if case else '' }}">
+      </div>
+      <!-- Assignee — permission controlled -->
+      <div class="col-md-4">
+        <label class="form-label">Assignee</label>
+        {% if not case or current_user.can('cases','edit_assignee') %}
+        <select name="assignee_id" class="form-select">
+          <option value="">— Select —</option>
+          {% for m in team %}
+          <option value="{{ m.id }}" {% if case and case.assignee_id==m.id %}selected{% endif %}>{{ m.name }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input class="form-control" value="{{ case.assignee.name if case.assignee else '—' }}" disabled>
+        {% endif %}
+      </div>
+      <!-- Status — permission controlled -->
+      <div class="col-md-4">
+        <label class="form-label">Status</label>
+        {% if not case or current_user.can('cases','edit_status') %}
+        <select name="status" class="form-select">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if case and case.status==s %}selected{% elif not case and s=='Under Preparation' %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input class="form-control" value="{{ case.status }}" disabled>
+        {% endif %}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Priority</label>
+        <select name="priority" class="form-select">
+          {% for p in priorities %}
+          <option value="{{ p }}" {% if case and case.priority==p %}selected{% elif not case and p=='Normal' %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <!-- Compliance date — permission controlled -->
+      <div class="col-md-4">
+        <label class="form-label">Compliance / Due Date</label>
+        {% if not case or current_user.can('cases','edit_compliance_date') %}
+        <input type="date" name="compliance_date" class="form-control"
+               value="{{ case.compliance_date.strftime('%Y-%m-%d') if case and case.compliance_date else '' }}">
+        {% else %}
+        <input class="form-control" value="{{ case.compliance_date or '—' }}" disabled>
+        {% endif %}
+      </div>
+      <!-- Completion date — permission controlled -->
+      <div class="col-md-4">
+        <label class="form-label">Expected Completion</label>
+        {% if not case or current_user.can('cases','edit_completion_date') %}
+        <input type="date" name="completion_date" class="form-control"
+               value="{{ case.completion_date.strftime('%Y-%m-%d') if case and case.completion_date else '' }}">
+        {% else %}
+        <input class="form-control" value="{{ case.completion_date or '—' }}" disabled>
+        {% endif %}
+      </div>
+      <!-- Progress — permission controlled -->
+      <div class="col-12">
+        <label class="form-label">Progress Report</label>
+        {% if not case or current_user.can('cases','edit_progress') %}
+        <textarea name="progress" class="form-control" rows="5">{{ case.progress if case else '' }}</textarea>
+        {% else %}
+        <textarea class="form-control" rows="5" disabled>{{ case.progress if case else '' }}</textarea>
+        {% endif %}
+      </div>
+      <div class="col-12">
+        <label class="form-label">Internal Notes</label>
+        <textarea name="notes" class="form-control" rows="3">{{ case.notes if case else '' }}</textarea>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button class="btn btn-primary fw-semibold"><i class="fas fa-save me-1"></i>Save Case</button>
+      <a href="/cases/" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+</div></div>
+{% endblock %}

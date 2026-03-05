@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}{{ action }} Invoice{% endblock %}
+{% block topbar_title %}{{ action }} Invoice{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8"><div class="form-card">
+  <h5 class="fw-bold mb-4" style="color:#0F2A4A"><i class="fas fa-file-invoice me-2"></i>{{ action }} Invoice</h5>
+  <form method="post">
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">Invoice No. *</label><input name="invoice_no" class="form-control" value="{{ invoice.invoice_no if invoice else '' }}" required></div>
+      <div class="col-md-8"><label class="form-label">Client</label><select name="client_id" class="form-select"><option value="">— Select —</option>{% for c in clients %}<option value="{{ c.id }}" {% if invoice and invoice.client_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+      <div class="col-12"><label class="form-label">Related Case</label><select name="case_id" class="form-select"><option value="">— None —</option>{% for c in cases %}<option value="{{ c.id }}" {% if invoice and invoice.case_id==c.id %}selected{% endif %}>{{ c.case_details[:60] }}</option>{% endfor %}</select></div>
+      <div class="col-12"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3">{{ invoice.description if invoice else '' }}</textarea></div>
+      <div class="col-md-4"><label class="form-label">Amount (PKR)</label><input type="number" name="amount" class="form-control" step="0.01" value="{{ invoice.amount if invoice else '' }}"></div>
+      <div class="col-md-4"><label class="form-label">Status</label>
+        {% if not invoice or current_user.can('invoices','edit_invoice_status') %}
+        <select name="status" class="form-select">{% for s in statuses %}<option value="{{ s }}" {% if invoice and invoice.status==s %}selected{% elif not invoice and s=='Pending' %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+        {% else %}<input class="form-control" value="{{ invoice.status }}" disabled>{% endif %}
+      </div>
+      <div class="col-md-4"><label class="form-label">Issue Date</label><input type="date" name="issue_date" class="form-control" value="{{ invoice.issue_date.strftime('%Y-%m-%d') if invoice and invoice.issue_date else '' }}"></div>
+      <div class="col-md-4"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control" value="{{ invoice.due_date.strftime('%Y-%m-%d') if invoice and invoice.due_date else '' }}"></div>
+      <div class="col-md-4"><label class="form-label">Paid Date</label><input type="date" name="paid_date" class="form-control" value="{{ invoice.paid_date.strftime('%Y-%m-%d') if invoice and invoice.paid_date else '' }}"></div>
+      <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ invoice.notes if invoice else '' }}</textarea></div>
+    </div>
+    <div class="d-flex gap-2 mt-4"><button class="btn btn-primary fw-semibold"><i class="fas fa-save me-1"></i>Save</button><a href="/invoices/" class="btn btn-outline-secondary">Cancel</a></div>
+  </form>
+</div></div></div>
+{% endblock %}

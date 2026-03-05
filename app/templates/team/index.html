@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Team{% endblock %}{% block topbar_title %}<i class="fas fa-users me-2"></i>Team{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3"><h5 class="fw-bold mb-0" style="color:#0F2A4A">Team Members</h5>
+{% if current_user.can('team','add') %}<a href="/team/add" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i>Add Member</a>{% endif %}</div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover mb-0">
+<thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Cases</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>{% for m in members %}
+<tr>
+  <td class="fw-semibold">{{ m.name }}</td>
+  <td><small>{{ m.role or '—' }}</small></td>
+  <td><small>{{ m.email or '—' }}</small></td>
+  <td><small>{{ m.phone or '—' }}</small></td>
+  <td>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary">{{ case_counts.get(m.id,0) }}</span>
+      <div class="progress flex-grow-1" style="height:6px;width:80px"><div class="progress-bar" style="width:{{ [case_counts.get(m.id,0)*2,100]|min }}%"></div></div>
+    </div>
+  </td>
+  <td><span class="badge {{ 'bg-success' if m.is_active else 'bg-secondary' }}">{{ 'Active' if m.is_active else 'Inactive' }}</span></td>
+  <td><div class="d-flex gap-1">
+    {% if current_user.can('team','edit') %}<a href="/team/{{ m.id }}/edit" class="btn btn-xs btn-outline-secondary" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-pen"></i></a>{% endif %}
+    {% if current_user.can('team','delete') %}<form method="post" action="/team/{{ m.id }}/delete" onsubmit="return confirm('Remove member?')"><button class="btn btn-xs btn-outline-danger" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-trash"></i></button></form>{% endif %}
+  </div></td>
+</tr>{% else %}<tr><td colspan="7" class="text-center text-muted py-4">No team members.</td></tr>{% endfor %}</tbody>
+</table></div></div>{% endblock %}

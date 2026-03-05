@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Login — Case Manager</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<style>body{background:linear-gradient(135deg,#0F2A4A 0%,#1E3A5F 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif}</style>
+</head><body>
+<div class="card shadow-lg border-0" style="width:420px;border-radius:16px;overflow:hidden">
+  <div style="background:#0F2A4A;padding:32px;text-align:center">
+    <div style="font-size:3rem">⚖️</div>
+    <div style="color:#fff;font-size:1.4rem;font-weight:700;margin-top:8px">Case Manager</div>
+    <div style="color:#94A3B8;font-size:.85rem;margin-top:4px">Tax Advisory Practice</div>
+  </div>
+  <div class="card-body p-4">
+    <h6 class="mb-4 text-center fw-semibold text-secondary">Sign in to your account</h6>
+    {% if error %}<div class="alert alert-danger py-2 small mb-3">{{ error }}</div>{% endif %}
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% for cat, msg in messages %}<div class="alert alert-{{ cat }} py-2 small">{{ msg }}</div>{% endfor %}
+    {% endwith %}
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-muted">USERNAME</label>
+        <input name="username" class="form-control" placeholder="Enter username" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-muted">PASSWORD</label>
+        <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+      </div>
+      <div class="mb-4 form-check">
+        <input type="checkbox" name="remember" class="form-check-input" id="rem">
+        <label class="form-check-label small text-muted" for="rem">Keep me signed in</label>
+      </div>
+      <button class="btn w-100 fw-semibold py-2 text-white" style="background:#2563EB;border:none;border-radius:8px">
+        Sign In &rarr;
+      </button>
+    </form>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body></html>

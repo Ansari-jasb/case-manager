@@ -1,0 +1,121 @@
+{% extends "base.html" %}{% block title %}Cases{% endblock %}
+{% block topbar_title %}<i class="fas fa-folder-open me-2"></i>Cases{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0" style="color:#0F2A4A">All Cases <span class="badge bg-secondary ms-2" style="font-size:.75rem">{{ cases|length }}</span></h5>
+  <div class="d-flex gap-2">
+    {% if current_user.can('cases','add') %}
+    <a href="/cases/add" class="btn btn-success btn-sm fw-semibold"><i class="fas fa-plus me-1"></i>New Case</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3"><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="🔍 Search cases, clients…"></div>
+      <div class="col-md-2">
+        <select name="status" class="form-select form-select-sm">
+          <option value="All" {% if status=='All' %}selected{% endif %}>All Statuses</option>
+          {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="assignee" class="form-select form-select-sm">
+          <option value="All">All Assignees</option>
+          {% for m in team %}<option value="{{ m.name }}" {% if asgn==m.name %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="client" class="form-select form-select-sm">
+          <option value="All">All Clients</option>
+          {% for c in clients %}<option value="{{ c.name }}" {% if client==c.name %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-auto d-flex gap-1">
+        <button class="btn btn-primary btn-sm">Filter</button>
+        <a href="/cases/" class="btn btn-outline-secondary btn-sm">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr>
+        <th style="width:50px">#</th>
+        <th>File No</th><th>Client</th><th>Case Details</th>
+        <th>Tax Period</th><th>Assignee</th><th>Status</th>
+        <th>Priority</th><th>Due Date</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for case in cases %}
+      <tr>
+        <td class="text-muted small">{{ loop.index }}</td>
+        <td><small class="font-monospace">{{ case.file_no or '—' }}</small></td>
+        <td><small>{{ case.client.name if case.client else '—' }}</small></td>
+        <td>
+          <a href="/cases/{{ case.id }}" class="text-decoration-none fw-semibold" style="color:#0F2A4A">
+            {{ case.case_details[:55] }}{% if case.case_details|length > 55 %}…{% endif %}
+          </a>
+        </td>
+        <td><small>{{ case.tax_period or '—' }}</small></td>
+        <td><small>{{ case.assignee.name if case.assignee else '—' }}</small></td>
+        <td>
+          {% set s = case.status or '' %}
+          <span class="badge-status s-{{ s|lower|replace(' ','-') }}">{{ s or '—' }}</span>
+        </td>
+        <td>
+          {% if case.priority %}
+          <span class="badge-status p-{{ case.priority|lower }}">{{ case.priority }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if case.compliance_date %}
+            {% set days = (case.compliance_date - today).days if today is defined else 999 %}
+            <small class="{{ 'text-danger fw-bold' if days is defined and days <= 3 else 'text-warning' if days is defined and days <= 7 else '' }}">
+              {{ case.compliance_date }}
+            </small>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="/cases/{{ case.id }}" class="btn btn-xs btn-outline-primary" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-eye"></i></a>
+            {% if current_user.can('cases','edit') %}
+            <a href="/cases/{{ case.id }}/edit" class="btn btn-xs btn-outline-secondary" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-pen"></i></a>
+            {% endif %}
+            {% if current_user.can('cases','delete') %}
+            <form method="post" action="/cases/{{ case.id }}/delete" onsubmit="return confirm('Delete this case?')">
+              <button class="btn btn-xs btn-outline-danger" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-trash"></i></button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="text-center text-muted py-5">No cases found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Pass today to template context via JS
+document.querySelectorAll('td small').forEach(el=>{
+  const t = el.textContent.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(t)){
+    const d = new Date(t), today = new Date();
+    today.setHours(0,0,0,0); d.setHours(0,0,0,0);
+    const diff = Math.round((d-today)/(1000*60*60*24));
+    if(diff<0) el.classList.add('text-danger','fw-bold');
+    else if(diff<=3) el.classList.add('text-danger','fw-bold');
+    else if(diff<=7) el.classList.add('text-warning');
+  }
+});
+</script>
+{% endblock %}

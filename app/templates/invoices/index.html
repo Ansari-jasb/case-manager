@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% block title %}Invoices{% endblock %}
+{% block topbar_title %}<i class="fas fa-file-invoice me-2"></i>Invoices{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h5 class="fw-bold mb-0" style="color:#0F2A4A">Invoices <span class="badge bg-secondary ms-2" style="font-size:.75rem">{{ invoices|length }}</span></h5>
+  {% if current_user.can('invoices','add') %}<a href="/invoices/add" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i>New Invoice</a>{% endif %}
+</div>
+<!-- Summary -->
+<div class="row g-3 mb-3">
+  {% for lbl,val,col in [('Total',total,'#0F2A4A'),('Collected',paid,'#059669'),('Pending',pending,'#D97706')] %}
+  <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">{{ lbl }} (PKR)</div><div class="kpi-value" style="color:{{ col }};font-size:1.5rem">{{ "{:,.0f}".format(val) }}</div></div></div>
+  {% endfor %}
+</div>
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3"><div class="card-body py-2">
+  <form method="get" class="row g-2">
+    <div class="col-md-2"><select name="status" class="form-select form-select-sm"><option value="All">All Statuses</option>{% for s in ['Pending','Paid','Partial','Cancelled'] %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><select name="client" class="form-select form-select-sm"><option value="All">All Clients</option>{% for c in clients %}<option value="{{ c.name }}" {% if client==c.name %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+    <div class="col-auto d-flex gap-1"><button class="btn btn-primary btn-sm">Filter</button><a href="/invoices/" class="btn btn-outline-secondary btn-sm">Reset</a></div>
+  </form>
+</div></div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover mb-0">
+  <thead><tr><th>Invoice No</th><th>Client</th><th>Case</th><th>Description</th><th>Amount (PKR)</th><th>Status</th><th>Issue Date</th><th>Due Date</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for inv in invoices %}
+  <tr>
+    <td><small class="font-monospace fw-semibold">{{ inv.invoice_no }}</small></td>
+    <td><small>{{ inv.client.name if inv.client else '—' }}</small></td>
+    <td><small>{{ inv.case.case_details[:35] if inv.case else '—' }}</small></td>
+    <td><small>{{ (inv.description or '')[:40] }}</small></td>
+    <td class="fw-semibold">{{ "{:,.0f}".format(inv.amount or 0) }}</td>
+    <td><span class="badge {{ 'bg-success' if inv.status=='Paid' else 'bg-warning text-dark' if inv.status=='Pending' else 'bg-secondary' }}">{{ inv.status }}</span></td>
+    <td><small>{{ inv.issue_date or '—' }}</small></td>
+    <td><small>{{ inv.due_date or '—' }}</small></td>
+    <td><div class="d-flex gap-1">
+      {% if current_user.can('invoices','edit') %}<a href="/invoices/{{ inv.id }}/edit" class="btn btn-xs btn-outline-secondary" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-pen"></i></a>{% endif %}
+      {% if current_user.can('invoices','delete') %}<form method="post" action="/invoices/{{ inv.id }}/delete" onsubmit="return confirm('Delete invoice?')"><button class="btn btn-xs btn-outline-danger" style="padding:2px 8px;font-size:.75rem"><i class="fas fa-trash"></i></button></form>{% endif %}
+    </div></td>
+  </tr>
+  {% else %}<tr><td colspan="9" class="text-center text-muted py-4">No invoices found.</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

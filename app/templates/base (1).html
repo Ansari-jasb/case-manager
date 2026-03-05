@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Case Manager{% endblock %}</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+  :root{--navy:#0F2A4A;--navy-light:#1E3A5F;--blue:#2563EB;--green:#059669;--amber:#D97706;--red:#DC2626;--purple:#7C3AED;--sidebar-w:240px}
+  body{font-family:'Segoe UI',sans-serif;background:#F8F9FC;margin:0}
+  /* Sidebar */
+  #sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--navy);position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column}
+  .sidebar-logo{background:var(--navy-light);padding:20px 16px;text-align:center}
+  .sidebar-logo .logo-icon{font-size:2rem;color:#fff}
+  .sidebar-logo .logo-title{color:#fff;font-weight:700;font-size:1rem;margin:4px 0 2px}
+  .sidebar-logo .logo-sub{color:#94A3B8;font-size:.72rem}
+  .sidebar-nav .nav-link{color:#CBD5E1;padding:11px 20px;font-size:.92rem;display:flex;align-items:center;gap:10px;border-radius:0;transition:.15s}
+  .sidebar-nav .nav-link:hover{background:rgba(255,255,255,.08);color:#fff}
+  .sidebar-nav .nav-link.active{background:var(--blue);color:#fff;font-weight:600}
+  .sidebar-nav .nav-link i{width:18px;text-align:center}
+  .sidebar-bottom{margin-top:auto;padding:12px 0;border-top:1px solid #1E3A5F}
+  .sidebar-bottom .nav-link{font-size:.85rem;color:#64748B}
+  /* Main */
+  #main{margin-left:var(--sidebar-w);min-height:100vh}
+  /* Topbar */
+  .topbar{background:#fff;border-bottom:1px solid #E2E8F0;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+  .topbar-title{font-weight:700;color:var(--navy);font-size:1.1rem}
+  /* Notification bell */
+  .notif-bell{position:relative;cursor:pointer}
+  .notif-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;display:flex;align-items:center;justify-content:center;font-weight:700}
+  /* Badges */
+  .badge-status{padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+  .s-under-preparation{background:#FEF3C7;color:#D97706}
+  .s-prepared{background:#DBEAFE;color:#2563EB}
+  .s-completed,.s-case-closed{background:#D1FAE5;color:#059669}
+  .s-under-process{background:#EDE9FE;color:#7C3AED}
+  .s-replied{background:#CFFAFE;color:#0891B2}
+  .p-high{background:#FEE2E2;color:#DC2626}
+  .p-normal{background:#DBEAFE;color:#2563EB}
+  .p-low{background:#D1FAE5;color:#059669}
+  /* KPI cards */
+  .kpi-card{background:#fff;border-radius:12px;border:1px solid #E2E8F0;padding:20px;transition:.2s}
+  .kpi-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  .kpi-value{font-size:2.2rem;font-weight:800;line-height:1.1}
+  .kpi-label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;margin-bottom:4px}
+  /* Tables */
+  .table-hover tbody tr:hover{background:#F0F7FF}
+  .table thead th{background:var(--navy);color:#fff;font-weight:600;font-size:.82rem;border:none;white-space:nowrap}
+  /* Forms */
+  .form-card{background:#fff;border-radius:12px;border:1px solid #E2E8F0;padding:28px}
+  .form-label{font-size:.85rem;font-weight:600;color:#475569;margin-bottom:4px}
+  /* Page header */
+  .page-header{background:var(--navy);color:#fff;padding:18px 24px;margin:-24px -24px 24px}
+  .page-header h1{font-size:1.4rem;font-weight:700;margin:0}
+  /* Notification items */
+  .notif-item{padding:12px 16px;border-bottom:1px solid #F1F5F9;transition:.15s}
+  .notif-item:hover{background:#F8F9FC}
+  .notif-item.unread{background:#EFF6FF;border-left:3px solid var(--blue)}
+  /* Perm matrix */
+  .perm-table th,td{font-size:.8rem}
+  .perm-check{width:16px;height:16px;cursor:pointer}
+</style>
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚖️</div>
+    <div class="logo-title">Case Manager</div>
+    <div class="logo-sub">Tax Advisory Practice</div>
+  </div>
+  <nav class="sidebar-nav mt-2">
+    <a class="nav-link {% if request.blueprint=='dashboard' %}active{% endif %}" href="/"><i class="fas fa-chart-pie"></i> Dashboard</a>
+    <a class="nav-link {% if request.blueprint=='cases' %}active{% endif %}" href="/cases/"><i class="fas fa-folder-open"></i> Cases</a>
+    <a class="nav-link {% if request.blueprint=='invoices' %}active{% endif %}" href="/invoices/"><i class="fas fa-file-invoice"></i> Invoices</a>
+    <a class="nav-link {% if request.blueprint=='clients' %}active{% endif %}" href="/clients/"><i class="fas fa-building"></i> Clients</a>
+    <a class="nav-link {% if request.blueprint=='team' %}active{% endif %}" href="/team/"><i class="fas fa-users"></i> Team</a>
+    {% if current_user.role == 'admin' %}
+    <a class="nav-link {% if request.blueprint=='admin' %}active{% endif %}" href="/admin/users"><i class="fas fa-shield-halved"></i> Admin</a>
+    {% endif %}
+  </nav>
+  <div class="sidebar-bottom">
+    <a class="nav-link" href="/auth/change-password"><i class="fas fa-key fa-sm"></i> Change Password</a>
+    <a class="nav-link text-danger" href="/auth/logout"><i class="fas fa-right-from-bracket fa-sm"></i> Logout</a>
+    <div class="px-3 py-1" style="font-size:.7rem;color:#334155">v1.0 · {{ current_user.role|title }}</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-title">{% block topbar_title %}{% endblock %}</span>
+    <div class="d-flex align-items-center gap-3">
+      <!-- Notification Bell -->
+      <a href="/notifications/" class="notif-bell text-decoration-none text-dark" id="notif-bell-link">
+        <i class="fas fa-bell fa-lg" style="color:#64748B"></i>
+        <span class="notif-badge d-none" id="notif-badge">0</span>
+      </a>
+      <!-- User pill -->
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+          <i class="fas fa-user-circle me-1"></i>{{ current_user.full_name or current_user.username }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li><span class="dropdown-item-text text-muted small">{{ current_user.role|title }}</span></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="/auth/change-password"><i class="fas fa-key me-2"></i>Change Password</a></li>
+          <li><a class="dropdown-item text-danger" href="/auth/logout"><i class="fas fa-right-from-bracket me-2"></i>Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash messages -->
+  <div class="px-4 pt-3">
+    {% for cat, msg in get_flashed_messages(with_categories=True) %}
+    <div class="alert alert-{{ 'success' if cat=='success' else 'warning' if cat=='warning' else 'danger' if cat=='danger' else 'info' }} alert-dismissible fade show py-2" role="alert">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Page content -->
+  <div class="p-4">{% block content %}{% endblock %}</div>
+</div>
+{% else %}
+{% block public_content %}{% endblock %}
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+// Poll unread notification count every 60s
+function refreshNotifBadge(){
+  fetch('/notifications/api/unread-count')
+    .then(r=>r.json()).then(d=>{
+      const b=document.getElementById('notif-badge');
+      if(!b)return;
+      if(d.count>0){b.textContent=d.count>99?'99+':d.count;b.classList.remove('d-none')}
+      else b.classList.add('d-none');
+    }).catch(()=>{});
+}
+refreshNotifBadge();
+setInterval(refreshNotifBadge, 60000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

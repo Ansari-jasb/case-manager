@@ -1,138 +1,61 @@
-# Case Management System — Web App
-### Cloud Deployment Guide (Render.com)
+# Case Manager — Render Deployment
+
+## Default Login
+- Username: `admin`
+- Password: `Admin@1234`  ← Change immediately after first login
 
 ---
 
-## ✅ What's Included
+## How to Upload to GitHub (No Git knowledge needed)
 
-| Feature | Details |
-|---|---|
-| 🔐 Login system | Secure session-based authentication |
-| 👥 4 user roles | Admin · Manager · Associate · Viewer |
-| 🔒 Field-level permissions | Lock any field for any user |
-| 📁 Cases | Full CRUD with search & filters |
-| 🧾 Invoices | Track amounts, status, auto email alerts |
-| 🏢 Clients | Client directory |
-| 👥 Team | Staff management |
-| 📧 Email notifications | New invoice → finance team auto-notified |
-| 📋 Audit log | Every action logged with user + timestamp |
+1. Go to **github.com** → sign in or sign up free
+2. Click the **"+"** button (top right) → **"New repository"**
+3. Name it `case-manager` → leave everything else default → click **"Create repository"**
+4. On the next page, click **"uploading an existing file"**
+5. Extract this zip on your computer
+6. **Select ALL files and folders** inside the extracted folder → drag them into GitHub
+7. Scroll down → click **"Commit changes"**
+
+> ⚠️ Important: Upload the FILES INSIDE the folder, not the folder itself.
+> GitHub should show: `wsgi.py`, `requirements.txt`, `app/`, `render.yaml` at the root level.
 
 ---
 
-## 🚀 Deploy to Render.com (Free — 15 minutes)
+## Deploy on Render
 
-### Step 1 — Push to GitHub
-1. Create a free account at github.com
-2. Create a new repository (e.g. `case-manager`)
-3. Upload all files from this folder to that repository
-
-### Step 2 — Connect to Render
-1. Go to **render.com** → Sign up free
+1. Go to **render.com** → sign up free
 2. Click **"New +"** → **"Web Service"**
-3. Connect your GitHub repo
-4. Set these values:
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `gunicorn wsgi:app`
-   - **Python version:** 3.11
+3. Click **"Connect GitHub"** → authorize → select your `case-manager` repo
+4. Fill in:
+   - **Name**: case-manager
+   - **Region**: pick closest to you
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn wsgi:app --workers 2 --bind 0.0.0.0:$PORT`
+   - **Plan**: Free
+5. Scroll to **Environment Variables** → add:
 
-### Step 3 — Set Environment Variables
-In Render dashboard → Environment tab, add:
+| Key | Value |
+|-----|-------|
+| SECRET_KEY | (click Generate) |
+| ADMIN_EMAIL | your email |
+| MAIL_USERNAME | your Gmail |
+| MAIL_PASSWORD | Gmail App Password |
+| MAIL_SERVER | smtp.gmail.com |
+| MAIL_PORT | 587 |
 
-| Variable | Value |
-|---|---|
-| `SECRET_KEY` | Any long random string |
-| `SMTP_HOST` | `smtp.gmail.com` |
-| `SMTP_PORT` | `587` |
-| `SMTP_USER` | Your Gmail address |
-| `SMTP_PASS` | Gmail App Password (see below) |
-| `FINANCE_EMAIL` | Finance team email(s), comma-separated |
-| `CRON_SECRET` | Any secret string for overdue alerts |
-
-### Step 4 — Deploy
-Click **"Deploy"** — Render will build and launch your app.
-You'll get a URL like: `https://case-manager-xxxx.onrender.com`
-
-**Share this URL with your team.** No installation needed.
+6. Click **"Create Web Service"**
+7. Wait ~3 minutes for build to finish
+8. Click the URL Render gives you — your app is live!
 
 ---
 
-## 📧 Gmail App Password Setup
-Gmail requires an "App Password" (not your regular password):
-1. Go to myaccount.google.com → Security
+## Gmail App Password Setup
+1. myaccount.google.com → Security
 2. Enable 2-Step Verification
-3. Go to Security → App Passwords
-4. Generate a password for "Mail" → use this as `SMTP_PASS`
+3. Search "App Passwords" → create one for Mail
+4. Use that 16-character code as MAIL_PASSWORD
 
 ---
 
-## 🔐 Default Login
-After first deployment:
-- **Username:** `admin`
-- **Password:** `admin123`
-- ⚠️ Change this immediately via the Change Password page
-
----
-
-## 👤 User Roles Explained
-
-| Role | View | Add | Edit | Delete | Scope |
-|---|---|---|---|---|---|
-| **Admin** | ✅ All | ✅ | ✅ | ✅ | Everything |
-| **Manager** | ✅ All | ✅ | ✅ | ❌ | All cases |
-| **Associate** | ✅ Own | ✅ | ✅ Own | ❌ | Only assigned cases |
-| **Viewer** | ✅ All | ❌ | ❌ | ❌ | Read only |
-
-## 🔒 Field-Level Permissions
-As Admin, go to **Users & Permissions → 🔒 Permissions** for any user to:
-- Grant/restrict View, Add, Edit, Delete per module
-- Lock specific fields (e.g. lock "Amount" so associate can't change invoice amounts)
-
----
-
-## 📧 Email Notifications
-Automatic emails are sent when:
-- ✅ A **new invoice** is created → finance team notified instantly
-- ✅ An invoice is **marked Paid** → finance team notified
-- ✅ **Overdue invoices** → call `/api/check-overdue?secret=YOUR_CRON_SECRET` daily
-
-To set up daily overdue alerts, use a free cron service like **cron-job.org** to call:
-```
-GET https://your-app.onrender.com/api/check-overdue?secret=YOUR_CRON_SECRET
-```
-
----
-
-## 💾 Data Persistence on Render (Free Tier)
-Render's free tier has **ephemeral storage** — the SQLite database resets on redeploy.
-
-**To keep data permanently (recommended):**
-- Upgrade to Render's paid tier ($7/mo) with a persistent disk, OR
-- Use **Railway.app** free tier which includes persistent storage, OR
-- Use **Supabase** (free PostgreSQL database) — I can upgrade the app for this on request
-
----
-
-## 📁 File Structure
-```
-CaseManagerWeb/
-├── wsgi.py              ← Gunicorn entry point
-├── requirements.txt     ← Python dependencies
-├── render.yaml          ← Render config
-├── casemanager.db       ← SQLite database (auto-created)
-├── app/
-│   ├── models.py        ← Database + all queries
-│   ├── routes.py        ← All Flask routes
-│   └── email_service.py ← Email notifications
-└── templates/           ← HTML templates
-    ├── base.html
-    ├── login.html
-    ├── dashboard.html
-    ├── cases.html / case_form.html / case_detail.html
-    ├── invoices.html / invoice_form.html
-    ├── clients.html / client_form.html
-    ├── team.html / team_form.html
-    ├── admin_users.html / admin_user_form.html
-    ├── admin_permissions.html
-    ├── audit_log.html
-    └── change_password.html
-```
+## Adding Team Members
+Admin → Users → Add User → set username, role, temporary password → share URL + credentials

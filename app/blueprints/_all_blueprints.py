@@ -540,3 +540,137 @@ def reset_to_role(uid):
     db.session.commit()
     flash(f"Permissions reset to role defaults for {u.full_name or u.username}.", "info")
     return redirect(url_for("admin.permissions", uid=u.id))
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IMPORT
+# ─────────────────────────────────────────────────────────────────────────────
+import_bp = Blueprint("import_data", __name__, url_prefix="/import")
+
+@import_bp.route("/", methods=["GET", "POST"])
+@login_required
+@admin_only
+def index():
+    if request.method == "POST":
+        f = request.files.get("excel_file")
+        if not f or not f.filename.endswith((".xlsx", ".xls")):
+            flash("Please upload a valid Excel file (.xlsx or .xls).", "danger")
+            return redirect(url_for("import_data.index"))
+
+        try:
+            import openpyxl, io
+            wb   = openpyxl.load_workbook(io.BytesIO(f.read()), data_only=True)
+            sheet_name = request.form.get("sheet_name", "").strip()
+
+            if sheet_name and sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+            else:
+                ws = wb.active
+
+            rows    = list(ws.iter_rows(values_only=True))
+            if not rows:
+                flash("The selected sheet is empty.", "danger")
+                return redirect(url_for("import_data.index"))
+
+            # Detect headers from first row
+            headers = [str(h).strip().lower() if h else "" for h in rows[0]]
+
+            def col(fragments):
+                for i, h in enumerate(headers):
+                    if any(frag in h for frag in fragments):
+                        return i
+                return None
+
+            ci_client   = col(["client"])
+            ci_details  = col(["case detail", "case"])
+            ci_period   = col(["tax period", "period"])
+            ci_assignee = col(["assignee"])
+            ci_fileno   = col(["file no", "file"])
+            ci_status   = col(["status"])
+            ci_progress = col(["progress"])
+            ci_invoice  = col(["invoice"])
+            ci_complete = col(["completion", "expected"])
+
+            if ci_client is None or ci_details is None:
+                flash(f"Could not find 'Client' or 'Case Details' columns. "
+                      f"Found: {', '.join(h for h in headers if h)}", "danger")
+                return redirect(url_for("import_data.index"))
+
+            # Build lookups
+            client_lookup = {c.name.lower(): c.id for c in Client.query.all()}
+            team_lookup   = {m.name.lower(): m.id for m in TeamMember.query.all()}
+
+            imported = skipped = 0
+            for row in rows[1:]:
+                def val(ci):
+                    if ci is None or ci >= len(row): return ""
+                    v = row[ci]
+                    return str(v).strip() if v is not None else ""
+
+                client_name  = val(ci_client)
+                case_details = val(ci_details)
+
+                if not client_name or not case_details or case_details.lower() == "nan":
+                    skipped += 1
+                    continue
+
+                # Auto-create client if not exists
+                cl_key = client_name.lower()
+                if cl_key not in client_lookup:
+                    new_cl = Client(name=client_name)
+                    db.session.add(new_cl)
+                    db.session.flush()
+                    client_lookup[cl_key] = new_cl.id
+
+                # Auto-create team member if not exists
+                assignee_name = val(ci_assignee)
+                a_key = assignee_name.lower()
+                if a_key and a_key not in team_lookup:
+                    new_tm = TeamMember(name=assignee_name, role="Associate", is_active=True)
+                    db.session.add(new_tm)
+                    db.session.flush()
+                    team_lookup[a_key] = new_tm.id
+
+                status = val(ci_status) if ci_status is not None else ""
+                if not status or status.lower() == "nan":
+                    status = "Under Preparation"
+
+                # Parse completion date
+                comp_date = None
+                if ci_complete is not None:
+                    raw = val(ci_complete)
+                    if raw and raw.lower() != "nan":
+                        try:
+                            from datetime import datetime as dt
+                            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"):
+                                try:
+                                    comp_date = dt.strptime(raw, fmt).date(); break
+                                except: pass
+                        except: pass
+
+                case = Case(
+                    file_no         = val(ci_fileno),
+                    client_id       = client_lookup.get(cl_key),
+                    case_details    = case_details,
+                    tax_period      = val(ci_period),
+                    assignee_id     = team_lookup.get(a_key) if a_key else None,
+                    status          = status,
+                    priority        = "Normal",
+                    completion_date = comp_date,
+                    progress        = val(ci_progress) if ci_progress is not None else "",
+                    notes           = val(ci_invoice)  if ci_invoice  is not None else "",
+                )
+                db.session.add(case)
+                imported += 1
+
+            db.session.commit()
+            flash(f"✅ Successfully imported {imported} cases. "
+                  f"({skipped} empty rows skipped)", "success")
+            return redirect(url_for("cases.index"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Import failed: {str(e)}", "danger")
+            return redirect(url_for("import_data.index"))
+
+    # GET — show form with sheet names if file already chosen
+    return render_template("import/index.html")

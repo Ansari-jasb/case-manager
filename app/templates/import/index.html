@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Import Excel Data{% endblock %}
+{% block topbar_title %}<i class="fas fa-file-excel me-2"></i>Import from Excel{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- Instructions card -->
+    <div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #059669 !important">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3" style="color:#059669"><i class="fas fa-circle-info me-2"></i>How to Import</h6>
+        <ol class="mb-0 small text-muted" style="line-height:2">
+          <li>Upload your Excel file (<code>.xlsx</code> or <code>.xls</code>)</li>
+          <li>Enter the <strong>exact sheet name</strong> containing your cases (e.g. <code>Cases Status Sheet</code>)</li>
+          <li>Your file must have columns for: <strong>Client</strong> and <strong>Case Details</strong> (required)</li>
+          <li>Optional columns detected automatically: <strong>File No, Tax Period, Assignee, Status, Progress, Completion Date, Invoice Status</strong></li>
+          <li>New clients and assignees will be <strong>created automatically</strong> if they don't exist</li>
+          <li>Existing cases are <strong>not duplicated</strong> — only new rows are added</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Upload form -->
+    <div class="form-card">
+      <h5 class="fw-bold mb-4" style="color:#0F2A4A">
+        <i class="fas fa-upload me-2"></i>Upload Excel File
+      </h5>
+
+      <form method="post" enctype="multipart/form-data">
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Excel File <span class="text-danger">*</span></label>
+          <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls" required>
+          <div class="form-text">Supported formats: .xlsx, .xls — Max size: 10MB</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Sheet Name</label>
+          <input type="text" name="sheet_name" class="form-control"
+                 placeholder="e.g. Cases Status Sheet"
+                 value="Cases Status Sheet">
+          <div class="form-text">Leave blank to use the first sheet in the workbook.</div>
+        </div>
+
+        <div class="alert alert-warning py-2 small mb-4">
+          <i class="fas fa-triangle-exclamation me-2"></i>
+          <strong>Admin only.</strong> This will add cases to the database. 
+          Make sure your Excel file is the correct one before importing.
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success fw-semibold px-4">
+            <i class="fas fa-file-import me-2"></i>Import Now
+          </button>
+          <a href="/cases/" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Column mapping reference -->
+    <div class="card border-0 shadow-sm mt-4">
+      <div class="card-header fw-bold" style="background:#F8F9FC;color:#0F2A4A;border:none">
+        <i class="fas fa-table me-2"></i>Column Detection Reference
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Your Column Header</th><th>Maps To</th><th>Required?</th></tr></thead>
+          <tbody>
+            <tr><td><code>Client name</code> / <code>Client</code></td><td>Client</td><td><span class="badge bg-danger">Required</span></td></tr>
+            <tr><td><code>Case Details</code> / <code>Case</code></td><td>Case Details</td><td><span class="badge bg-danger">Required</span></td></tr>
+            <tr><td><code>File No</code> / <code>File</code></td><td>File Number</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>Tax Period</code> / <code>Period</code></td><td>Tax Period</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>Assignee</code></td><td>Assigned To</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>File Status</code> / <code>Status</code></td><td>Case Status</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>Progress report</code> / <code>Progress</code></td><td>Progress Notes</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>Invoice Status</code> / <code>Invoice</code></td><td>Notes</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+            <tr><td><code>Expected Working Completion Date</code></td><td>Completion Date</td><td><span class="badge bg-secondary">Optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -80,6 +80,7 @@
     <a class="nav-link {% if request.blueprint=='team' %}active{% endif %}" href="/team/"><i class="fas fa-users"></i> Team</a>
     {% if current_user.role == 'admin' %}
     <a class="nav-link {% if request.blueprint=='admin' %}active{% endif %}" href="/admin/users"><i class="fas fa-shield-halved"></i> Admin</a>
+    <a class="nav-link {% if request.blueprint=='import_data' %}active{% endif %}" href="/import/"><i class="fas fa-file-excel"></i> Import Excel</a>
     {% endif %}
   </nav>
   <div class="sidebar-bottom">
@@ -149,3 +150,4 @@ setInterval(refreshNotifBadge, 60000);
 {% block extra_js %}{% endblock %}
 </body>
 </html>
+

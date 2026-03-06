@@ -47,9 +47,10 @@ def create_app():
     from app.blueprints.team          import team_bp
     from app.blueprints.admin         import admin_bp
     from app.blueprints.notifications import notif_bp
+    from app.blueprints.import_data   import import_bp
 
     for bp in [auth_bp, dashboard_bp, cases_bp, invoices_bp,
-               clients_bp, team_bp, admin_bp, notif_bp]:
+               clients_bp, team_bp, admin_bp, notif_bp, import_bp]:
         app.register_blueprint(bp)
 
     with app.app_context():
@@ -80,3 +81,4 @@ def _seed_defaults():
         db.session.add(admin)
         db.session.commit()
         print("Default admin: username=admin  password=Admin@1234")
+

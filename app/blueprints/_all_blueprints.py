@@ -39,14 +39,14 @@ def index():
         "rev_collected": db.session.query(db.func.sum(Invoice.amount)).filter_by(status="Paid").scalar() or 0,
         "rev_pending":   db.session.query(db.func.sum(Invoice.amount)).filter_by(status="Pending").scalar() or 0,
     }
-    by_status   = db.session.query(Case.status, db.func.count()).group_by(Case.status).all()
-    by_assignee = (db.session.query(TeamMember.name, db.func.count(Case.id))
+    by_status   = [[r[0], r[1]] for r in db.session.query(Case.status, db.func.count()).group_by(Case.status).all()]
+    by_assignee = [[r[0], r[1]] for r in (db.session.query(TeamMember.name, db.func.count(Case.id))
                    .join(Case, TeamMember.id == Case.assignee_id)
-                   .group_by(TeamMember.name).all())
-    by_client   = (db.session.query(Client.name, db.func.count(Case.id))
+                   .group_by(TeamMember.name).all())]
+    by_client   = [[r[0], r[1]] for r in (db.session.query(Client.name, db.func.count(Case.id))
                    .join(Case, Client.id == Case.client_id)
                    .group_by(Client.name).order_by(db.func.count(Case.id).desc())
-                   .limit(8).all())
+                   .limit(8).all())]
     due_soon    = (Case.query
                    .filter(Case.compliance_date.isnot(None),
                            Case.compliance_date >= today,
@@ -674,3 +674,4 @@ def index():
 
     # GET — show form with sheet names if file already chosen
     return render_template("import/index.html")
+
